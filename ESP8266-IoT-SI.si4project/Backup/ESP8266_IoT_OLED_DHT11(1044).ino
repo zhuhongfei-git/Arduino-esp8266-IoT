@@ -84,12 +84,6 @@ void OLED_display_init( void )
     oled.putString("Temp:     *C");
     oled.setTextXY(4, 0);
     oled.putString("Humi:     %R");
-    oled.setTextXY(5, 0);
-    oled.putString("Total:       B");
-    oled.setTextXY(6, 0);
-    oled.putString("Used:       B");
-    
-    
 }
 
 /*****************************************************************************
@@ -115,11 +109,6 @@ void OLED_run_function(  void)
 
     oled.setTextXY(4, 5);
     oled.putFloat(DHT11_humidity);
-
-    oled.setTextXY(5, 6);
-    oled.putNumber(total_bytes);
-    oled.setTextXY(6, 5);
-    oled.putNumber(used_bytes);
 
 }
 

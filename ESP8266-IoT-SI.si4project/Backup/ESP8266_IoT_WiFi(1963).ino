@@ -72,9 +72,11 @@ void setup_WiFi_mode()
     IPAddress softSubnet(255, 255, 255, 0);
 
     WiFi.softAPConfig(softLocal, softGateway, softSubnet);
-    String ap_name=("ESP-"+(String)ESP.getChipId());
-
-
+    String ap_name=("ESP"+(String)ESP.getChipId());
+    const char *ap_ssid	  = ap_name.c_str();
+     WiFi.softAP(ap_ssid, def_ap_password, WIFI_CHANNAL, WIFI_HIDDEN,
+                    WIFI_MAX_CONNECT);
+/*
     load_ap_params();
     if ((*ap_ssid != NULL) && (*ap_pwd != NULL))
     {
@@ -83,11 +85,11 @@ void setup_WiFi_mode()
 
     else
     {
-        WiFi.softAP(ap_name.c_str(), def_ap_password, WIFI_CHANNAL, WIFI_HIDDEN,
+        WiFi.softAP(def_ap_ssid, def_ap_password, WIFI_CHANNAL, WIFI_HIDDEN,
                     WIFI_MAX_CONNECT);
     }
 
-
+*/
     IPAddress myIP = WiFi.softAPIP();
 #if DEBUG_KEY
     DEBUG_UART_PRINT("AP IP address: ");

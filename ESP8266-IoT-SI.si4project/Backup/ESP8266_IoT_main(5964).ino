@@ -28,9 +28,6 @@
 #include <Arduino.h>
 #include <DHT.h>
 
-#include "FS.h"
-#include <ArduinoJson.h>
-
 
 /*==============================================*
  *      constants or macros define              *
@@ -46,28 +43,15 @@
 DHT dht(DHTPIN, DHTTYPE);
 bool shouldReboot;
 
-//JSON config file
-const char *configFileName   = "/config.txt";
 
-const uint16_t max_bytes_config_file = 1024;
-StaticJsonDocument<max_bytes_config_file> doc;
-
-//wifi AP
-char ap_ssid[17];
-char ap_pwd[17];
-
-//FS info
-long total_bytes = 0;
-long used_bytes  = 0;
 /*Zh array
 *todo:if you want to change Zh to english,
 *please change here*/
 const char zh_array[][48] =
 {
-    "OTA升级界面",            "本地升级",  "主机升级",           "升级",       "本地更新完成",
-    "请输入(.bin)文件",       "文件过大",  "数据丢失",           "校验未通过", "主机升级需要定制",
-    "WiFi AP配置",			  "WiFi账号",  "WiFi密码",           "确认密码",   "确定",
-    "配置成功",               "配置失败",  "两次输入密码不一致", "继续配置"
+    "OTA升级界面",            "本地升级",  "主机升级",  "升级",       "本地更新完成",
+    "请输入(.bin)文件",       "文件过大",  "数据丢失",  "校验未通过", "主机升级需要定制"
+    "WiFi AP配置",			  "WiFi账号",  "WiFi密码",  "确认密码",   "确定"
 };
 
 enum zh_array_subscript
@@ -75,8 +59,8 @@ enum zh_array_subscript
     ota_update,              update_local,           update_host,         update_post,        local_update_finish,
     update_filename_error,   update_filesize_error,  update_write_error,  update_check_error, update_host_req,
     http_wifi_set,			 set_wifi_ssid,          set_wifi_pwd,        wifi_pwd_cfm,       http_make_sure,
-	config_wifi_ok,          config_fail,            pwd_consistent,      config_again,
-  
+
+
 };
 
 
@@ -87,11 +71,6 @@ enum zh_array_subscript
 void setup()
 {
     // put your setup code here, to run once:
-    if (SPIFFS.begin())
-    {
-		get_file_system_msg();
-    }
-
     setup_WiFi_mode();
 
     OLED_display_init();
