@@ -13,7 +13,7 @@
 *
 *
 *  History:
-* 
+*
 *       1.  Date         : 2019/10/10
 *           Author       : zhuhongfei
 *           Modification : Created file
@@ -32,8 +32,7 @@
  *      constants or macros define              *
  *----------------------------------------------*/
 //DHT11
-//#define DHTPIN    5
-//#define DHTTYPE   DHT11
+#define DHT_READ_INTERVAL   2000
 
 
 
@@ -41,11 +40,10 @@
  *      project-wide global variables           *
  *----------------------------------------------*/
 //DHT11
-float DHT11_temperature = 0;
-float DHT11_humidity	= 0;
+float DHT11_temperature = 0.0;
+float DHT11_humidity	= 0.0;
 
-//extern DHT dht;
-
+unsigned long previous_millis = 0;    // will store last time DHT was updated
 
 
 /*==============================================*
@@ -53,21 +51,21 @@ float DHT11_humidity	= 0;
  *----------------------------------------------*/
 /*****************************************************************************
 *   Prototype    : OLED_display_init
-*   Description  : initiation OLED 
+*   Description  : initiation OLED
 *   Input        : void
 *   Output       : None
 *   Return Value : void
-*   Calls        : 
-*   Called By    : 
+*   Calls        :
+*   Called By    :
 *
 *   History:
-* 
+*
 *       1.  Date         : 2019/10/10
 *           Author       : zhuhongfei
 *           Modification : Created function
 *
 *****************************************************************************/
-void OLED_display_init( void )
+void OLED_display_init(void)
 {
     Wire.begin();
     oled.init();                      // Initialze SSD1306 OLED display
@@ -88,8 +86,8 @@ void OLED_display_init( void )
     oled.putString("Total:       B");
     oled.setTextXY(6, 0);
     oled.putString("Used:       B");
-    
-    
+
+
 }
 
 /*****************************************************************************
@@ -98,17 +96,17 @@ void OLED_display_init( void )
 *   Input        : void
 *   Output       : None
 *   Return Value : void
-*   Calls        : 
-*   Called By    : 
+*   Calls        :
+*   Called By    :
 *
 *   History:
-* 
+*
 *       1.  Date         : 2019/10/10
 *           Author       : zhuhongfei
 *           Modification : Created function
 *
 *****************************************************************************/
-void OLED_run_function(  void)
+void OLED_run_function(void)
 {
     oled.setTextXY(3, 5);
     oled.putFloat(DHT11_temperature);
@@ -129,29 +127,50 @@ void OLED_run_function(  void)
 *   Input        : void
 *   Output       : None
 *   Return Value : void
-*   Calls        : 
-*   Called By    : 
+*   Calls        :
+*   Called By    :
 *
 *   History:
-* 
+*
 *       1.  Date         : 2019/10/10
 *           Author       : zhuhongfei
 *           Modification : Created function
 *
 *****************************************************************************/
-void DHT11_read_sensor( void )
+void DHT11_read_sensor(void)
 {
-    delay(2000);
-    // Reading temperature or humidity takes about 250 milliseconds!
-    // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-    DHT11_humidity = dht.readHumidity();
-    // Read temperature as Celsius (the default)
-    DHT11_temperature = dht.readTemperature();
+    unsigned long current_millis = millis();
+
+    if ((current_millis - previous_millis) >= DHT_READ_INTERVAL)
+    {
+        previous_millis = current_millis;
+
+        // Reading temperature or humidity takes about 250 milliseconds!
+        // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+        float DHT11_humi = dht.readHumidity();
+        // Read temperature as Celsius (the default)
+        float DHT11_temper = dht.readTemperature();
 
 
-    // Check if any reads failed and exit early (to try again).
-    if (isnan(DHT11_humidity) || isnan(DHT11_temperature))
-    { 
-        return;
+        // Check if any reads failed and exit early (to try again).
+        if (isnan(DHT11_humi)) 
+        {
+            return;
+        }
+        else
+        {
+        	DHT11_humidity    = DHT11_humi;
+        }
+
+        if(isnan(DHT11_temperature))
+        {
+        	return;
+        }
+        else
+        {
+        	DHT11_temperature = DHT11_temper; 
+        }
+        
     }
+
 }

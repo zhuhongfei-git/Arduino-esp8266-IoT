@@ -31,6 +31,7 @@
 #include "FS.h"
 #include <ArduinoJson.h>
 
+#include <ESP8266WiFi.h>
 
 /*==============================================*
  *      constants or macros define              *
@@ -57,8 +58,8 @@ char ap_ssid[17];
 char ap_pwd[17];
 
 //FS info
-long total_bytes = 0;
-long used_bytes  = 0;
+unsigned long total_bytes = 0;
+unsigned long used_bytes  = 0;
 /*Zh array
 *todo:if you want to change Zh to english,
 *please change here*/
@@ -87,6 +88,8 @@ enum zh_array_subscript
 void setup()
 {
     // put your setup code here, to run once:
+    Serial.begin(115200);
+    
     if (SPIFFS.begin())
     {
 		get_file_system_msg();
@@ -97,6 +100,7 @@ void setup()
     OLED_display_init();
     dht.begin();
 
+	start_data_server();
     http_init();
 }
 
@@ -106,6 +110,8 @@ void loop()
     DHT11_read_sensor();
     OLED_run_function();
 
+	uart_to_tcp();
     //if (shouldReboot == true),ESP will reboot
     ESP_reboot();
+    
 }

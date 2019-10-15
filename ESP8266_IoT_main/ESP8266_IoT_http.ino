@@ -32,8 +32,6 @@
  *      constants or macros define              *
  *----------------------------------------------*/
 #define WEB_SRV_PORT      80
-#define WIFI_SRV_PORT     65432
-#define MAX_SRV_CLIENTS   2
 
 
 /*==============================================*
@@ -56,10 +54,49 @@ uint8_t http_handle_update_esp8266(AsyncWebServerRequest *request,
                                    size_t index, uint8_t *data, size_t len, bool final);
 
 bool http_handle_cfgwifi(AsyncWebServerRequest *request);
+String processor(const String& var);
+
+
+
 
 /*==============================================*
  *      routines' or functions' implementations *
  *----------------------------------------------*/
+/*****************************************************************************
+*   Prototype    : processor
+*   Description  : handle web page request
+*   Input        : const String& var  
+*   Output       : None
+*   Return Value : String
+*   Calls        : 
+*   Called By    : 
+*
+*   History:
+* 
+*       1.  Date         : 2019/10/15
+*           Author       : zhuhongfei
+*           Modification : Created function
+*
+*****************************************************************************/
+String processor(const String& var)
+{
+  //Serial.println(var);
+  if(var == "TEMPERATURE"){
+	return String(DHT11_temperature);
+  }
+  else if(var == "HUMIDITY"){
+	return String(DHT11_humidity);
+  }
+  else if(var == "TOTAL_BYTES"){
+  	return String(total_bytes);
+  }
+  else if(var == "USED_BYTES"){
+  	return String(used_bytes);
+  }
+  return String();
+}
+
+ 
 /*****************************************************************************
 *   Prototype    : ESP_reboot
 *   Description  : decide esp8266 should be reboot
@@ -353,14 +390,24 @@ void http_init(void)
             return request->requestAuthentication();
         }
 
-        String html  = "";
-        html += "<html> <head><meta http-equiv='Content-Type' content='text/html ;charset=utf-8'/></head> ";
-        html  = html + "<body><h1>Welcome to ESP8266-IoT world</h1>";
-
-        html = html +  "</body></html>";
-        request->send(200, "text/html", html.c_str());
+        //request->send_P(200, "text/html", index_html, processor);
+        request->send(SPIFFS, "/index.html", String(), false, processor);
     });
 
+    
+	server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
+		request->send_P(200, "text/plain", String(DHT11_temperature).c_str());
+	  });
+	server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request){
+	request->send_P(200, "text/plain", String(DHT11_humidity).c_str());
+	});
+	server.on("/tb", HTTP_GET, [](AsyncWebServerRequest *request){
+	request->send_P(200, "text/plain", String(total_bytes).c_str());
+	});
+	server.on("/ub", HTTP_GET, [](AsyncWebServerRequest *request){
+	request->send_P(200, "text/plain", String(used_bytes).c_str());
+	});
+	
     server.on("/update", HTTP_GET, [](AsyncWebServerRequest * request)
     {
         if (!request->authenticate(user_name, user_password))

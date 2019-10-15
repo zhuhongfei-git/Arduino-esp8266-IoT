@@ -23,7 +23,7 @@
 /*==============================================*
  *      include header files                    *
  *----------------------------------------------*/
-#include "ESP8266WiFi.h"
+
 
 
 
@@ -39,8 +39,10 @@
  *      project-wide global variables           *
  *----------------------------------------------*/
 const char *def_ap_password = "12345678";
-const char *def_ap_ssid = "Telchinaxf";
+const char *def_ap_ssid = "ESP-zhf";
 
+const char *sta_ssid = "HUAWEI P20";
+const char *sta_pwd  = "3130241056";
 
 /*==============================================*
  *      routines' or functions' implementations *
@@ -66,7 +68,7 @@ void setup_WiFi_mode()
 #if DEBUG_KEY
     DEBUG_UART_PRINTLN("Setting soft-AP ... ");
 #endif
-    WiFi.mode(WIFI_AP);//WIFI_AP_STA
+    /*WiFi.mode(WIFI_AP_STA);//WIFI_AP
     IPAddress softLocal(192, 168, 4, 1);
     IPAddress softGateway(192, 168, 4, 1);
     IPAddress softSubnet(255, 255, 255, 0);
@@ -93,19 +95,20 @@ void setup_WiFi_mode()
     DEBUG_UART_PRINT("AP IP address: ");
     DEBUG_UART_PRINTLN(myIP);
 #endif
-
+*/
 
     //station mode ,not used now
     //TODO:1.will be used;2.if->while delay(500ms)+try connect count
 
     //DEBUG_UART_PRINTLN("Starting soft-sta ... ");
-    //WiFi.begin(ap_ssid, ap_password);//ssid, password
-    /*if (WiFi.waitForConnectResult() != WL_CONNECTED)
+    WiFi.begin(sta_ssid, sta_pwd);//ssid, password
+    
+    if (WiFi.waitForConnectResult() != WL_CONNECTED)
     {
-    	DEBUG_UART_PRINTF("WiFi Failed!\n");
+    	//DEBUG_UART_PRINTF("WiFi Failed!\n");
     	return;
     }
-
+	/*
     DEBUG_UART_PRINT("IP Address: ");
     DEBUG_UART_PRINTLN(WiFi.localIP());
     DEBUG_UART_PRINT("Hostname: ");
