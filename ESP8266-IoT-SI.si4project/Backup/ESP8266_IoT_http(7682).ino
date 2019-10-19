@@ -32,6 +32,8 @@
  *      constants or macros define              *
  *----------------------------------------------*/
 #define WEB_SRV_PORT      80
+#define WIFI_SRV_PORT     65432
+#define MAX_SRV_CLIENTS   2
 
 
 /*==============================================*
@@ -54,44 +56,10 @@ uint8_t http_handle_update_esp8266(AsyncWebServerRequest *request,
                                    size_t index, uint8_t *data, size_t len, bool final);
 
 bool http_handle_cfgwifi(AsyncWebServerRequest *request);
-String processor(const String& var);
-void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
-
-
-
 
 /*==============================================*
  *      routines' or functions' implementations *
  *----------------------------------------------*/
-/*****************************************************************************
-*   Prototype    : processor
-*   Description  : handle web page request
-*   Input        : const String& var  
-*   Output       : None
-*   Return Value : String
-*   Calls        : 
-*   Called By    : 
-*
-*   History:
-* 
-*       1.  Date         : 2019/10/15
-*           Author       : zhuhongfei
-*           Modification : Created function
-*
-*****************************************************************************/
-String processor(const String& var)
-{
-  //Serial.println(var);
-  if(var == "TEMPERATURE"){
-	return String(DHT11_temperature);
-  }
-  else if(var == "HUMIDITY"){
-	return String(DHT11_humidity);
-  }
-  return String();
-}
-
- 
 /*****************************************************************************
 *   Prototype    : ESP_reboot
 *   Description  : decide esp8266 should be reboot
@@ -359,42 +327,6 @@ bool http_handle_cfgwifi(AsyncWebServerRequest *request)
 
 }
 
-/*****************************************************************************
-*   Prototype    : onUpload
-*   Description  : upload file from local to UART
-*   Input        : AsyncWebServerRequest *request  
-*                  String filename                 
-*                  size_t index                    
-*                  uint8_t *data                   
-*                  size_t len                      
-*                  bool final                      
-*   Output       : None
-*   Return Value : void
-*   Calls        : 
-*   Called By    : 
-*
-*   History:
-* 
-*       1.  Date         : 2019/10/16
-*           Author       : zhuhongfei
-*           Modification : Created function
-*
-*****************************************************************************/
-void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
-{
-	if(!index){
-	//Serial.printf("UploadStart: %s\n", filename.c_str());
-	}
-	for(size_t i=0; i<len; i++){
-		Serial.write(data[i]);
-	}
-	if(final){
-	//Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
-	}
-}
-
-
-
 
 /*****************************************************************************
 *   Prototype    : http_init
@@ -421,18 +353,14 @@ void http_init(void)
             return request->requestAuthentication();
         }
 
-        //request->send_P(200, "text/html", index_html, processor);
-        request->send(SPIFFS, "/index.html", String(), false, processor);
+        String html  = "";
+        html += "<html> <head><meta http-equiv='Content-Type' content='text/html ;charset=utf-8'/></head> ";
+        html  = html + "<body><h1>Welcome to ESP8266-IoT world</h1>";
+
+        html = html +  "</body></html>";
+        request->send(200, "text/html", html.c_str());
     });
 
-    
-	server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
-		request->send_P(200, "text/plain", String(DHT11_temperature).c_str());
-	  });
-	server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request){
-	request->send_P(200, "text/plain", String(DHT11_humidity).c_str());
-	});
-	
     server.on("/update", HTTP_GET, [](AsyncWebServerRequest * request)
     {
         if (!request->authenticate(user_name, user_password))
@@ -485,16 +413,7 @@ void http_init(void)
         }
 
     });
-	server.on("/upload", HTTP_GET, [](AsyncWebServerRequest *request)
-	{
-    	request->send(200, "text/html", "<form method='POST' action='/upload' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='upload'></form>");
-    });
-	// upload a file to /upload
-	server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request)
-	{
-		request->send(200);
-	}, onUpload);
-	
+
     server.on("/wifi", HTTP_GET, [](AsyncWebServerRequest * request)
     {
         if (!request->authenticate(user_name, user_password))
@@ -530,7 +449,7 @@ void http_init(void)
 		request->send(200, "text/html", html.c_str());
 
     });
-	server.onFileUpload(onUpload);
+
     server.onNotFound(notFound);
 
     server.begin();

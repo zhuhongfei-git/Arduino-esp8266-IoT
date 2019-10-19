@@ -30,9 +30,8 @@
 
 #include "FS.h"
 #include <ArduinoJson.h>
-//baiduyun
-#include <ESP8266WiFi.h>
 
+#include <ESP8266WiFi.h>
 
 /*==============================================*
  *      constants or macros define              *
@@ -58,18 +57,9 @@ StaticJsonDocument<max_bytes_config_file> doc;
 char ap_ssid[17];
 char ap_pwd[17];
 
-//LED
-const int led_pin = 4; 
-
 //FS info
 unsigned long total_bytes = 0;
 unsigned long used_bytes  = 0;
-
-
-//baiduyun
-void run_task_on_mqttclient();
-void run_mqtt_task_loop();
-
 /*Zh array
 *todo:if you want to change Zh to english,
 *please change here*/
@@ -100,9 +90,6 @@ void setup()
     // put your setup code here, to run once:
     Serial.begin(115200);
     
-    pinMode(led_pin, OUTPUT);
-    digitalWrite(led_pin, LOW);
-    
     if (SPIFFS.begin())
     {
 		get_file_system_msg();
@@ -112,21 +99,16 @@ void setup()
 
     OLED_display_init();
     dht.begin();
-	 
+
 	start_data_server();
     http_init();
-
-    run_task_on_mqttclient();
 }
 
 void loop()
 {
     // put your main code here, to run repeatedly:
-    
     DHT11_read_sensor();
     OLED_run_function();
-    
-    run_mqtt_task_loop();
 
 	uart_to_tcp();
     //if (shouldReboot == true),ESP will reboot

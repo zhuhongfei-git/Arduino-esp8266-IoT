@@ -68,10 +68,7 @@ void setup_WiFi_mode()
 #if DEBUG_KEY
     DEBUG_UART_PRINTLN("Setting soft-AP ... ");
 #endif
-	WiFi.mode(WIFI_AP_STA);//WIFI_AP
-
-    
-    
+    /*WiFi.mode(WIFI_AP_STA);//WIFI_AP
     IPAddress softLocal(192, 168, 4, 1);
     IPAddress softGateway(192, 168, 4, 1);
     IPAddress softSubnet(255, 255, 255, 0);
@@ -92,7 +89,15 @@ void setup_WiFi_mode()
                     WIFI_MAX_CONNECT);
     }
 
-	//station mode ,not used now
+
+    IPAddress myIP = WiFi.softAPIP();
+#if DEBUG_KEY
+    DEBUG_UART_PRINT("AP IP address: ");
+    DEBUG_UART_PRINTLN(myIP);
+#endif
+*/
+
+    //station mode ,not used now
     //TODO:1.will be used;2.if->while delay(500ms)+try connect count
 
     //DEBUG_UART_PRINTLN("Starting soft-sta ... ");
@@ -100,19 +105,9 @@ void setup_WiFi_mode()
     
     if (WiFi.waitForConnectResult() != WL_CONNECTED)
     {
-    	WiFi.disconnect(false);
+    	//DEBUG_UART_PRINTF("WiFi Failed!\n");
+    	return;
     }
-
-    
-#if DEBUG_KEY
-	IPAddress myIP = WiFi.softAPIP();
-    DEBUG_UART_PRINT("AP IP address: ");
-    DEBUG_UART_PRINTLN(myIP);
-    
-#endif
-
-
-
 	/*
     DEBUG_UART_PRINT("IP Address: ");
     DEBUG_UART_PRINTLN(WiFi.localIP());

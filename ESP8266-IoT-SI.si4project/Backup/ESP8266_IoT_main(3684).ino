@@ -58,9 +58,6 @@ StaticJsonDocument<max_bytes_config_file> doc;
 char ap_ssid[17];
 char ap_pwd[17];
 
-//LED
-const int led_pin = 4; 
-
 //FS info
 unsigned long total_bytes = 0;
 unsigned long used_bytes  = 0;
@@ -99,9 +96,6 @@ void setup()
 {
     // put your setup code here, to run once:
     Serial.begin(115200);
-    
-    pinMode(led_pin, OUTPUT);
-    digitalWrite(led_pin, LOW);
     
     if (SPIFFS.begin())
     {

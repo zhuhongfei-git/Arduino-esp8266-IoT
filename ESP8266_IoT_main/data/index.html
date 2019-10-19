@@ -34,18 +34,7 @@
     <span id="humidity">%HUMIDITY%</span>
     <sup class="units">%</sup>
   </p>
-  <p>
-	<i class="fas fa-battery-full" style="color:#007800;"></i>
-	<span class="dht-labels">Total_Bytes</span>
-	<span id="total_bytes">%TOTAL_BYTES%</span>
-    <sup class="units">B</sup>
-  </p>
-  <p>
-	<i class="fas fa-battery-quarter" style="color:#017800;"></i>
-	<span class="dht-labels">Used_Bytes</span>
-	<span id="used_bytes">%USED_BYTES%</span>
-	<sup class="units">B</sup>
-  </p>
+
 </body>
 <script>
 setInterval(function ( ) {
@@ -69,26 +58,6 @@ setInterval(function ( ) {
   xhttp.open("GET", "/humidity", true);
   xhttp.send();
 }, 1000 ) ;
-setInterval(function ( ) {
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      document.getElementById("total_bytes").innerHTML = this.responseText;
-    }
-  };
-  xhttp.open("GET", "/tb", true);
-  xhttp.send();
-},1000);
-setInterval(function ( ) {
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      document.getElementById("used_bytes").innerHTML = this.responseText;
-    }
-  };
-  xhttp.open("GET", "/ub", true);
-  xhttp.send();
-},1000);
 
 </script>
 </html>

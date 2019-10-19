@@ -55,7 +55,69 @@ uint8_t http_handle_update_esp8266(AsyncWebServerRequest *request,
 
 bool http_handle_cfgwifi(AsyncWebServerRequest *request);
 String processor(const String& var);
-void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
+
+
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html>
+<head>
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
+  <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.7.2/css/all.css' integrity='sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr' crossorigin='anonymous'>
+  <style>
+    html {
+     font-family: Arial;
+     display: inline-block;
+     margin: 0px auto;
+     text-align: center;
+    }
+    h2 { font-size: 3.0rem; }
+    p { font-size: 3.0rem; }
+    .units { font-size: 1.2rem; }
+    .dht-labels{
+      font-size: 1.5rem;
+      vertical-align:middle;
+      padding-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h2>ESP8266-IoT</h2>
+  <p>
+    <i class='fas fa-thermometer-half' style='color:#059e8a;'></i> 
+    <span class='dht-labels'>Temperature</span> 
+    <span id='temperature'>%TEMPERATURE%</span>
+    <sup class='units'>&deg;C</sup>
+  </p>
+  <p>
+    <i class='fas fa-tint' style='color:#00add6;'></i> 
+    <span class='dht-labels'>Humidity</span>
+    <span id='humidity'>%HUMIDITY%</span>
+    <sup class='units'>%</sup>
+  </p>
+</body>
+<script>
+setInterval(function(){
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      document.getElementById('temperature').innerHTML = this.responseText;
+    }
+  };
+  xhttp.open('GET', '/temperature', true);
+  xhttp.send();
+}, 100 ) ;
+
+setInterval(function(){
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      document.getElementById('humidity').innerHTML = this.responseText;
+    }
+  };
+  xhttp.open('GET', '/humidity', true);
+  xhttp.send();
+}, 100 ) ;
+</script>
+</html>)rawliteral";
 
 
 
@@ -359,42 +421,6 @@ bool http_handle_cfgwifi(AsyncWebServerRequest *request)
 
 }
 
-/*****************************************************************************
-*   Prototype    : onUpload
-*   Description  : upload file from local to UART
-*   Input        : AsyncWebServerRequest *request  
-*                  String filename                 
-*                  size_t index                    
-*                  uint8_t *data                   
-*                  size_t len                      
-*                  bool final                      
-*   Output       : None
-*   Return Value : void
-*   Calls        : 
-*   Called By    : 
-*
-*   History:
-* 
-*       1.  Date         : 2019/10/16
-*           Author       : zhuhongfei
-*           Modification : Created function
-*
-*****************************************************************************/
-void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
-{
-	if(!index){
-	//Serial.printf("UploadStart: %s\n", filename.c_str());
-	}
-	for(size_t i=0; i<len; i++){
-		Serial.write(data[i]);
-	}
-	if(final){
-	//Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
-	}
-}
-
-
-
 
 /*****************************************************************************
 *   Prototype    : http_init
@@ -420,9 +446,15 @@ void http_init(void)
         {
             return request->requestAuthentication();
         }
+/*
+        String html  = "";
+        html += "<html> <head><meta http-equiv='Content-Type' content='text/html ;charset=utf-8'/></head> ";
+        html  = html + "<body><h1>Welcome to ESP8266-IoT world</h1>";
 
-        //request->send_P(200, "text/html", index_html, processor);
-        request->send(SPIFFS, "/index.html", String(), false, processor);
+        html = html +  "</body></html>";
+        request->send(200, "text/html", html.c_str());*/
+
+        request->send_P(200, "text/html", index_html, processor);
     });
 
     
@@ -432,7 +464,7 @@ void http_init(void)
 	server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request){
 	request->send_P(200, "text/plain", String(DHT11_humidity).c_str());
 	});
-	
+
     server.on("/update", HTTP_GET, [](AsyncWebServerRequest * request)
     {
         if (!request->authenticate(user_name, user_password))
@@ -485,16 +517,7 @@ void http_init(void)
         }
 
     });
-	server.on("/upload", HTTP_GET, [](AsyncWebServerRequest *request)
-	{
-    	request->send(200, "text/html", "<form method='POST' action='/upload' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='upload'></form>");
-    });
-	// upload a file to /upload
-	server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request)
-	{
-		request->send(200);
-	}, onUpload);
-	
+
     server.on("/wifi", HTTP_GET, [](AsyncWebServerRequest * request)
     {
         if (!request->authenticate(user_name, user_password))
@@ -530,7 +553,7 @@ void http_init(void)
 		request->send(200, "text/html", html.c_str());
 
     });
-	server.onFileUpload(onUpload);
+
     server.onNotFound(notFound);
 
     server.begin();
