@@ -1,5 +1,7 @@
----- shouldReboot Matches (4 in 0 files) ----
-ESP_reboot in ESP8266_IoT_http.ino (ESP8266_IoT_main) :     if (shouldReboot)
-ESP_reboot in ESP8266_IoT_http.ino (ESP8266_IoT_main) :         shouldReboot = false;
-http_handle_update_esp8266 in ESP8266_IoT_http.ino (ESP8266_IoT_main) :             //shouldReboot = !Update.hasError();
-http_init::{lambda} in ESP8266_IoT_http.ino (ESP8266_IoT_main) :                     shouldReboot = !Update.hasError();
+---- update_command Matches (6 in 0 files) ----
+parse_mqtt_callback in ESP8266_IoT_baiduyun.ino (ESP8266_IoT_main) : 			update_command.update_flag = 0x5555;
+parse_mqtt_callback in ESP8266_IoT_baiduyun.ino (ESP8266_IoT_main) : 	            strcpy(update_command.cur_version, payload["firmwareVersion"]);
+parse_mqtt_callback in ESP8266_IoT_baiduyun.ino (ESP8266_IoT_main) : 				doc["progmem_version"] = update_command.cur_version;
+parse_mqtt_callback in ESP8266_IoT_baiduyun.ino (ESP8266_IoT_main) :             	update_command.update_flag = 0;
+ticker_handler in ESP8266_IoT_baiduyun.ino (ESP8266_IoT_main) :             payload["firmwareVersion"] = update_command.cur_version;
+ticker_handler in ESP8266_IoT_baiduyun.ino (ESP8266_IoT_main) :         if (update_command.update_flag != 0x5555)

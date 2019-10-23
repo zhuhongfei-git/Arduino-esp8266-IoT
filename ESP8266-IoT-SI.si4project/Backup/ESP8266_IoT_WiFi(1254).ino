@@ -23,7 +23,8 @@
 /*==============================================*
  *      include header files                    *
  *----------------------------------------------*/
-//#include <ESP8266WiFiMulti.h>
+
+
 
 
 /*==============================================*
@@ -42,8 +43,6 @@ const char *def_ap_ssid = "ESP-zhf";
 
 const char *sta_ssid = "HUAWEI P20";
 const char *sta_pwd  = "3130241056";
-
-//ESP8266WiFiMulti WiFiMulti;
 
 /*==============================================*
  *      routines' or functions' implementations *
@@ -66,20 +65,9 @@ const char *sta_pwd  = "3130241056";
 *****************************************************************************/
 void setup_WiFi_mode()
 {
-#if DEBUG_KEY 
+#if DEBUG_KEY
     DEBUG_UART_PRINTLN("Setting soft-AP ... ");
 #endif
-/*
-	WiFi.mode(WIFI_STA);
-  	WiFiMulti.addAP(sta_ssid, sta_pwd);
-  	WiFi.begin(sta_ssid, sta_pwd);//ssid, password
-
-  	if ((WiFiMulti.run() == WL_CONNECTED))
-  	{
-  		Serial.println("wifi_connected");
-  	}
-*/  	
-	
 	WiFi.mode(WIFI_AP_STA);//WIFI_AP\
 
     
@@ -93,8 +81,6 @@ void setup_WiFi_mode()
 
 
     load_ap_params();
-
-    
     if ((*ap_ssid != NULL) && (*ap_pwd != NULL))
     {
         WiFi.softAP(ap_ssid, ap_pwd, WIFI_CHANNAL, WIFI_HIDDEN, WIFI_MAX_CONNECT);
@@ -117,12 +103,14 @@ void setup_WiFi_mode()
     	WiFi.disconnect(false);
     }
 
+    
 #if DEBUG_KEY
 	IPAddress myIP = WiFi.softAPIP();
     DEBUG_UART_PRINT("AP IP address: ");
     DEBUG_UART_PRINTLN(myIP);
     
 #endif
+
 
 
 	/*

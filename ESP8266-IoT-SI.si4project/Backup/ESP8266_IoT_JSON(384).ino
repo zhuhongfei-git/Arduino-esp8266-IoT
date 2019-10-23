@@ -39,7 +39,6 @@
 
 bool save_config_file();
 void load_ap_params();
-void load_update_params();
 void get_file_system_msg();
 
 /*==============================================*
@@ -99,6 +98,7 @@ bool save_config_file()
 *****************************************************************************/
 void load_ap_params()
 {
+
     if (SPIFFS.exists(configFileName))
     {
         File configFile = SPIFFS.open(configFileName, "r");
@@ -122,44 +122,6 @@ void load_ap_params()
             	const char *pwd = doc["ap_pwd"];
             	strlcpy(&ap_pwd[0], pwd, 17);
             }
-
-            configFile.close();
-        }
-    }
-}
-
-/*****************************************************************************
-*   Prototype    : load_update_params
-*   Description  : load msg about update esp8266
-*   Input        : None
-*   Output       : None
-*   Return Value : void
-*   Calls        : 
-*   Called By    : 
-*
-*   History:
-* 
-*       1.  Date         : 2019/10/23
-*           Author       : zhuhongfei
-*           Modification : Created function
-*
-*****************************************************************************/
-void load_update_params()
-{
-	if (SPIFFS.exists(configFileName))
-    {
-        File configFile = SPIFFS.open(configFileName, "r");
-
-        if (configFile)
-        {
-            DeserializationError error = deserializeJson(doc, configFile);
-
-            if (error)
-            {
-                configFile.close();
-                return ;
-            }
-			
 			if(doc.containsKey("progmem_version"))
 			{
 				const char *version = doc["progmem_version"];
@@ -170,24 +132,6 @@ void load_update_params()
             	strcpy(update_command.cur_version,"1.0.1");
             }
 
-			if(doc.containsKey("update_jobId"))
-			{
-				const char *jobId = doc["update_jobId"];
-				strcpy(update_command.update_jobId,jobId);
-			}
-			if(doc.containsKey("update_flag"))
-			{
-				
-				uint16_t recv_flag = doc["update_flag"];
-				
-				Serial.printf("save_update_flag:0x%04x\n",recv_flag);
-				update_command.update_finish_flag = recv_flag;
-			}
-			if(doc.containsKey("update_result"))
-			{
-				const char *result = doc["update_result"];
-				strcpy(update_command.update_result,result);
-			}
             configFile.close();
         }
     }

@@ -93,8 +93,6 @@ void setup_WiFi_mode()
 
 
     load_ap_params();
-
-    
     if ((*ap_ssid != NULL) && (*ap_pwd != NULL))
     {
         WiFi.softAP(ap_ssid, ap_pwd, WIFI_CHANNAL, WIFI_HIDDEN, WIFI_MAX_CONNECT);

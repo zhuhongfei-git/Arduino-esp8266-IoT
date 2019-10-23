@@ -87,7 +87,7 @@ PubSubClient mqttclient(client);
 
 void ticker_handler();
 
-Task schedule_task(10000, TASK_FOREVER, &ticker_handler);
+Task schedule_task(5000, TASK_FOREVER, &ticker_handler);
 Scheduler runner;
 
 void parse_mqtt_callback(char *src_string);
@@ -181,16 +181,11 @@ void parse_mqtt_callback(char *src_string)
                 LED_status = "ON";
                 digitalWrite(led_pin, LOW);
 
-                //start update OTA
-				mqttclient.subscribe(IOT_TOPIC_SUBSCR_REQ);
             }
             else if (!strcmp(led_sta, "OFF"))
             {
                 LED_status = "OFF";
                 digitalWrite(led_pin, HIGH);
-
-                //stop update OTA
-				mqttclient.unsubscribe(IOT_TOPIC_SUBSCR_REQ);
             }
         }
     }
@@ -200,12 +195,13 @@ void parse_mqtt_callback(char *src_string)
         const char *method_name = docu["methodName"];
         if (!strcmp(method_name, "doFirmwareUpdate"))
         {
-			update_command.update_start_flag = 0x5555;
+			update_command.update_flag = 0x5555;
 			
             JsonObject  payload      = docu["payload"];
             const char *jobId        = payload["jobId"];
             const char* update_url   = payload["firmwareUrl"];
             const char *recv_version = payload["firmwareVersion"];
+			char *upload_update_result = "failed";
             
 
             req_doc["methodName"] = docu["methodName"];
@@ -217,8 +213,24 @@ void parse_mqtt_callback(char *src_string)
 
             mqttclient.publish(IOT_TOPIC_PUBLISH_DEVICE, resp);
 
-			//report start
-			req_doc.clear();
+
+
+            //download file and update
+            uint8_t update_result = begin_httpupdate(update_url);
+            
+			if(HTTP_UPDATE_OK == update_result)
+			{
+				//update file has been download,feeddback to cloud platform
+	            //start update
+	            strcpy(update_command.cur_version, payload["firmwareVersion"]);
+				strcpy(upload_update_result, "success");
+				
+				doc["progmem_version"] = update_command.cur_version;
+				save_config_file();
+	            
+			}
+
+            req_doc.clear();
             req_doc["requestId"] = "123456";
             req_doc["methodName"] = "reportFirmwareUpdateStart";
             JsonObject pay2load = req_doc.createNestedObject("payload");
@@ -230,97 +242,31 @@ void parse_mqtt_callback(char *src_string)
             mqttclient.publish(IOT_TOPIC_PUBLISH_REQ, req_start);
 
 
-            //download file and update
-            uint8_t update_result = begin_httpupdate(update_url);
+            //finish update
+            req_doc.clear();
+            req_doc["requestId"] = "123456";
+            req_doc["methodName"] = "reportFirmwareUpdateResult";
+            JsonObject pay3load = req_doc.createNestedObject("payload");
+            pay3load["result"] = upload_update_result;
+            pay3load["jobId"] = jobId;
+            char req_result[measureJson(req_doc) + 1];
+
+            serializeJson(req_doc, req_result, measureJson(req_doc) + 1);
+
+            mqttclient.publish(IOT_TOPIC_PUBLISH_REQ, req_result);
 
             if(HTTP_UPDATE_OK == update_result)
             {
-            	
-            	strcpy(update_command.cur_version, payload["firmwareVersion"]);
-				strcpy(update_command.update_result, "success");
+            	shouldReboot = true;
             }
             else
             {
-            	strcpy(update_command.update_result, "failed");
+            	update_command.update_flag = 0;
             }
-            
-			//update file has been download,feeddback to cloud platform 
-			update_command.update_finish_flag = 0xAAAA;
-            
-			mqttclient.unsubscribe(IOT_TOPIC_SUBSCR_REQ);
-			doc["progmem_version"] = update_command.cur_version;
-			doc["update_jobId"]    = jobId;
-			doc["update_flag"]     = update_command.update_finish_flag;
-			doc["update_result"]   = update_command.update_result;
-			
-			if(save_config_file())
-			{
-				Serial.println("save successfully");
-			}
-
-            shouldReboot = true;
-
-                     
         }
     }
 
 
-}
-
-/*****************************************************************************
-*   Prototype    : resport_update_result
-*   Description  : when system reboot,check update flag and 
-                   report to cloud platform
-*   Input        : None
-*   Output       : None
-*   Return Value : void
-*   Calls        : 
-*   Called By    : 
-*
-*   History:
-* 
-*       1.  Date         : 2019/10/23
-*           Author       : zhuhongfei
-*           Modification : Created function
-*
-*****************************************************************************/
-void resport_update_result()
-{
-	StaticJsonDocument<512> req_doc;
-
-	if(0xAAAA == update_command.update_finish_flag)
-	{
-		//finish update
-	    req_doc["requestId"] = "123456";
-	    req_doc["methodName"] = "reportFirmwareUpdateResult";
-	    JsonObject pay3load = req_doc.createNestedObject("payload");
-	    pay3load["result"] = update_command.update_result;
-	    pay3load["jobId"] = update_command.update_jobId;
-	    char req_result[measureJson(req_doc) + 1];
-
-	    serializeJson(req_doc, req_result, measureJson(req_doc) + 1);
-
-	    mqttclient.publish(IOT_TOPIC_PUBLISH_REQ, req_result);
-
-		//clear update flag;
-	    update_command.update_finish_flag = 0;
-	    doc["update_flag"] = update_command.update_finish_flag;
-
-	    save_config_file();
-	}
-	else
-	{
-	    req_doc["requestId"] = "12345";
-        req_doc["methodName"] = "reportCurrentFirmwareInfo";
-        JsonObject payload = req_doc.createNestedObject("payload");
-        payload["firmwareVersion"] = update_command.cur_version;
-        char version[measureJson(req_doc) + 1];
-
-        serializeJson(req_doc, version, measureJson(req_doc) + 1);
-
-        mqttclient.publish(IOT_TOPIC_PUBLISH_REQ, version);
-	}
-    
 }
 /*****************************************************************************
 *   Prototype    : mqtt_callback
@@ -386,11 +332,9 @@ void mqtt_callback(char *topic, byte *payload, unsigned int length)
 *****************************************************************************/
 void ticker_handler()
 {
-	//stop reporting maintask when update system 
-    if (0x5555 == update_command.update_start_flag)
-    {
-    	return;
-    }
+    StaticJsonDocument<256> document;
+
+
     if (!mqttclient.connected())
     {
         Serial.print(F("MQTT state: "));
@@ -401,31 +345,40 @@ void ticker_handler()
             Serial.print(F("MQTT Connected. Client id = "));
             Serial.println(IOT_CLIENT_ID);
 
-            
+            mqttclient.subscribe(IOT_TOPIC_SUBSCR_REQ);
             mqttclient.subscribe(IOT_TOPIC_SUBSCR_RESP);
             mqttclient.subscribe(IOT_TOPIC_SUBSCR_REJ);
             //mqttclient.subscribe(IOT_TOPIC_SUBSCR_ACC);
             mqttclient.subscribe(IOT_TOPIC_SUBSCR_DTA);
             //mqttclient.subscribe(IOT_TOPIC_SUBSCR_DOC);
 
-			load_update_params();
-			resport_update_result();
+            document["requestId"] = "12345";
+            document["methodName"] = "reportCurrentFirmwareInfo";
+            JsonObject payload = document.createNestedObject("payload");
+            payload["firmwareVersion"] = update_command.cur_version;
+            char version[measureJson(document) + 1];
+
+            serializeJson(document, version, measureJson(document) + 1);
+
+            mqttclient.publish(IOT_TOPIC_PUBLISH_REQ, version);
         }
     }
     else
-    {  	   	
-		StaticJsonDocument<256> document;
-		
-		JsonObject reported = document.createNestedObject("reported");
-		reported["Temper"]	= DHT11_temperature;
-		reported["Humi"]	= DHT11_humidity;
-		reported["LED"] 	= LED_status;
-		
-		char myDoc[measureJson(document) + 1];
-		
-		serializeJson(document, myDoc, measureJson(document) + 1);
-		
-		mqttclient.publish(IOT_TOPIC_PUBLISH, myDoc);
+    {
+        if (update_command.update_flag != 0x5555)
+        {
+            JsonObject reported = document.createNestedObject("reported");
+            reported["Temper"]	= DHT11_temperature;
+            reported["Humi"]	= DHT11_humidity;
+            reported["LED"] 	= LED_status;
+
+            char myDoc[measureJson(document) + 1];
+
+            serializeJson(document, myDoc, measureJson(document) + 1);
+
+            mqttclient.publish(IOT_TOPIC_PUBLISH, myDoc);
+        }
+
     }
 }
 
@@ -453,6 +406,7 @@ void run_task_on_mqttclient()
     runner.init();
     runner.addTask(schedule_task);
     schedule_task.enable();
+
 
 }
 

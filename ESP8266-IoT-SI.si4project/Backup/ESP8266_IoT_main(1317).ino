@@ -74,11 +74,8 @@ void get_file_system_msg();
 //http OTA
 typedef struct update_itself
 {
-    uint16_t update_start_flag;
-    uint16_t update_finish_flag;
+    uint16_t update_flag;
     char     cur_version[8];
-    char     update_result[8];
-    char     update_jobId[40];
 } Update_CMD;
 
 Update_CMD update_command;
@@ -138,7 +135,7 @@ void loop()
     // put your main code here, to run repeatedly:
     
     DHT11_read_sensor();
-    OLED_run_function();
+    //OLED_run_function();
     
     run_mqtt_task_loop();
 

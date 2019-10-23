@@ -69,20 +69,6 @@ unsigned long used_bytes  = 0;
 //baiduyun
 void run_task_on_mqttclient();
 void run_mqtt_task_loop();
-void get_file_system_msg();
-
-//http OTA
-typedef struct update_itself
-{
-    uint16_t update_start_flag;
-    uint16_t update_finish_flag;
-    char     cur_version[8];
-    char     update_result[8];
-    char     update_jobId[40];
-} Update_CMD;
-
-Update_CMD update_command;
-
 
 /*Zh array
 *todo:if you want to change Zh to english,
@@ -142,7 +128,7 @@ void loop()
     
     run_mqtt_task_loop();
 
-	//uart_to_tcp();
+	uart_to_tcp();
     //if (shouldReboot == true),ESP will reboot
     ESP_reboot();
     
